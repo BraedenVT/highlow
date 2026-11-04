@@ -1,8 +1,9 @@
 name: build-windows
 
 on:
-  push:
   workflow_dispatch:
+  push:
+    tags: ["v*"]
 
 permissions:
   contents: write
