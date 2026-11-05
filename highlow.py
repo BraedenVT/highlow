@@ -1,7 +1,7 @@
 import sys
 import deck
-from deck import init, shuf, draw
-from ui import ask, clearScreen, FILLER
+from deck import init, shuf
+from ui import ask, clearScreen, printCards, FILLER
 
 #### Pages ####
 
@@ -9,17 +9,15 @@ def settings():
     clearScreen()
 
     if ask("1. Customize Amount of Decks     2. Default\n") == "1":
-        deck.decks = int(input("How many decks will you use?\n>"))
-        if deck.decks < 1:
+        try:
+            deck.decks = max(1, int(input("How many decks will you use?\n>")))
+        except ValueError:
             deck.decks = 1
 
     if ask("1. Customize Cards in Decks    2. Default\n") == "1":
         deck.removed = input("Which cards should be blocked? (e.g. AJQK, 23456789X)\n>").upper()
-    mainPage()
 
 def gameLoop():
-    global cards
-
     while True:
         wins = 0
         loses = 0
@@ -37,39 +35,42 @@ def gameLoop():
         init()
         shuf()
 
-        playable = 52 - sum(deck.removed.count(rank) > 0 for rank in "A23456789XJQK")
+        playable = (13 - sum(deck.removed.count(rank) > 0 for rank in "A23456789XJQK")) * 4
         playable *= deck.decks
 
         if playable < 2:
             print("Not enough playable cards!")
             ask("Press any key to continue...")
-            mainPage()
             return
 
         for i in range(playable // 2):
             clearScreen()
             print(f"{FILLER}\nYou: {wins}     Me: {loses}\n{FILLER}\n")
 
-            playerRank = draw()
-
-            if playerRank is None:
+            player = deck.draw()
+            if player is None:
                 break
+            playerRank, playerCard = player
+            printCards(playerCard, None)
 
             if playerRank == 1:
                 playerRank = 20
 
             choice = ask(f"\n{FILLER}\n1. Higher     2. Lower\n{FILLER}\n")
-
             while choice not in ("1", "2"):
                 choice = ask("Invalid choice. 1. Higher     2. Lower\n")
 
-            compRank = draw()
-
-            if compRank is None:
+            comp = deck.draw()
+            if comp is None:
                 break
+            compRank, compCard = comp
 
             if compRank == 1:
                 compRank = 20
+
+            clearScreen()
+            print(f"{FILLER}\nYou: {wins}     Me: {loses}\n{FILLER}\n")
+            printCards(playerCard, compCard)
 
             if choice == "1":
                 if compRank > playerRank:
@@ -88,11 +89,10 @@ def gameLoop():
         choice = ask("1. Play Again    2. Home\n")
 
         if choice != "1":
-            mainPage()
             return
 
 def mainPage():
-   while True:
+    while True:
         clearScreen()
         print("----Welcome to High Low----")
 
@@ -104,5 +104,6 @@ def mainPage():
             settings()
         elif choice == "3":
             sys.exit()
+
 
 mainPage()

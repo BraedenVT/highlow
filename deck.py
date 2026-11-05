@@ -29,11 +29,10 @@ def draw():
         cur += 1
 
         rank = card % 13 + 1
-        rankChar = RANK_CHARS.get(rank, str(rank))
+        rankChar = {1: "A", 10: "X", 11: "J", 12: "Q", 13: "K"}.get(rank, str(rank))
 
         if rankChar not in removed:
-            print(numToCard(card))
-            return rank
+            return rank, numToCard(card)
 
     return None
 
