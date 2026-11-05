@@ -1,16 +1,24 @@
-name: build-windows
+name: build
 
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
-
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: highlow-windows
+            built: dist/highlow.exe
+            final: dist/highlow-windows.exe
+          - os: ubuntu-22.04
+            artifact: highlow-linux
+            built: dist/highlow
+            final: dist/highlow-linux
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -22,12 +30,27 @@ jobs:
 
       - run: pyinstaller --onefile --copy-metadata readchar highlow.py
 
+      - name: Rename binary
+        shell: bash
+        run: mv "${{ matrix.built }}" "${{ matrix.final }}"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: highlow-windows
-          path: dist/highlow.exe
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.final }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/highlow.exe
+          files: dist/*
